@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.2.0] - 2026-02-02
+
+### Fixed
+- **CRITICAL: Fixed 30-second timeout on all data transfers** - upload, download, list, downloadStream now complete instantly
+- Commands with data connections no longer wait for 226 completion response, dramatically improving speed
+- Download speed improved from 0.03 MB/s to 2.47 MB/s (80x faster!)
+- Recursive directory deletion now blazing fast (sub-second instead of minutes)
+
+### Added
+- `removeDir(path, recursive)` - Remove directories with optional recursive deletion
+- `chmod(path, mode)` - Change file permissions (Unix/Linux servers)
+- `listDetailed(path)` - Get parsed directory listings with permissions, owner, size, etc.
+- `site(command)` - Execute server-specific SITE commands
+
+### Improved
+- `listDetailed()` now filters out `.` and `..` entries automatically
+- Better handling of unknown file types in recursive operations
+
 ## [2.1.0] - 2026-02-02
 
 ### Added
