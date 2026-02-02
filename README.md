@@ -1,7 +1,7 @@
-# molex-ftp-client
+# molex-ftp
 
-[![npm version](https://img.shields.io/npm/v/molex-ftp-client.svg)](https://www.npmjs.com/package/molex-ftp-client)
-[![npm downloads](https://img.shields.io/npm/dm/molex-ftp-client.svg)](https://www.npmjs.com/package/molex-ftp-client)
+[![npm version](https://img.shields.io/npm/v/molex-ftp.svg)](https://www.npmjs.com/package/molex-ftp)
+[![npm downloads](https://img.shields.io/npm/dm/molex-ftp.svg)](https://www.npmjs.com/package/molex-ftp)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D14-brightgreen.svg)](https://nodejs.org)
 [![Dependencies](https://img.shields.io/badge/dependencies-0-success.svg)](package.json)
@@ -19,13 +19,13 @@
 ## Installation
 
 ```bash
-npm install molex-ftp-client
+npm install molex-ftp
 ```
 
 ## Quick Start
 
 ```javascript
-const FTPClient = require('molex-ftp-client');
+const FTPClient = require('molex-ftp');
 
 const client = new FTPClient();
 
@@ -269,7 +269,7 @@ try {
 ## Example
 
 ```javascript
-const FTPClient = require('molex-ftp-client');
+const FTPClient = require('molex-ftp');
 
 async function main() {
   const client = new FTPClient({ debug: true });

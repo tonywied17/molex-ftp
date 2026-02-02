@@ -48,7 +48,7 @@ async function runTests() {
 
     // Test 5: Upload a text file
     console.log('\n✅ TEST 5: Upload text file');
-    const testContent = 'Hello from molex-ftp-client!\nTimestamp: ' + new Date().toISOString();
+    const testContent = 'Hello from molex-ftp!\nTimestamp: ' + new Date().toISOString();
     await client.upload(testContent, 'test-file.txt');
     console.log('   Uploaded test-file.txt');
 
