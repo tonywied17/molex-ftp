@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.3.0] - 2026-02-02
+
+### Added
+- `uploadFile(localPath, remotePath, ensureDir)` - Upload local files from disk
+- `downloadFile(remotePath, localPath)` - Download files directly to disk
+
+### Changed
+- **Simplified `ensureDir()` API** - now auto-detects file paths (by extension) and creates parent directory
+- No more confusing `ensureDir(path, true, true)` - just `ensureDir(path)` works for both files and directories
+- Example: `ensureDir('/path/file.txt')` automatically creates `/path/` directory
+
 ## [2.2.0] - 2026-02-02
 
 ### Fixed
