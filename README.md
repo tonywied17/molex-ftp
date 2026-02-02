@@ -35,12 +35,18 @@ await client.connect({
   password: 'password'
 });
 
-// Upload with auto-directory creation
+// Upload content (string or Buffer)
 await client.upload('Hello World!', '/path/to/file.txt', true);
 
-// Download
+// Upload local file to FTP server
+await client.uploadFile('./local.txt', '/remote/file.txt');
+
+// Download to memory
 const data = await client.download('/path/to/file.txt');
 console.log(data.toString());
+
+// Download to local file
+await client.downloadFile('/remote/file.txt', './local.txt');
 
 await client.close();
 ```
@@ -80,16 +86,32 @@ await client.close();
 ```javascript
 await client.upload('content', '/path/file.txt');           // Basic upload
 await client.upload(buffer, '/path/file.bin');              // Upload Buffer
-await client.upload('content', '/deep/path/file.txt', true); // Auto-create dirs
+await client.upload('content', '/deep/path/file.txt', true); // Auto-create parent dirs
+```
+
+#### `uploadFile(localPath, remotePath, ensureDir)`
+Upload local file from disk to FTP server.
+```javascript
+await client.uploadFile('./local.txt', '/remote/file.txt');           // Upload local file
+await client.uploadFile('./docs/report.pdf', '/reports/2026.pdf');   // Auto-creates parent dirs
 ```
 
 #### `download(remotePath)` → `Buffer`
+Download file into memory as a Buffer.
 ```javascript
 const data = await client.download('/path/file.txt');
+console.log(data.toString());
+```
+
+#### `downloadFile(remotePath, localPath)` → `number`
+Download file from FTP server to local disk.
+```javascript
+const bytes = await client.downloadFile('/backup.zip', './local-backup.zip');
+console.log(`Downloaded ${bytes} bytes`);
 ```
 
 #### `downloadStream(remotePath, writeStream)` → `number`
-Stream download directly to a writable stream (for saving to disk or processing chunks).
+Stream download directly to a writable stream (for custom processing).
 ```javascript
 const fs = require('fs');
 const fileStream = fs.createWriteStream('./local-file.bin');
@@ -177,11 +199,12 @@ await client.cd('/path/to/directory');
 const currentDir = await client.pwd();
 ```
 
-#### `ensureDir(dirPath, recursive, isFilePath)`
-Create directory if it doesn't exist, optionally creating parent directories.
+#### `ensureDir(path, recursive)`
+Create directory if it doesn't exist. Auto-detects file paths (with extensions) and creates parent directory.
 ```javascript
-await client.ensureDir('/deep/nested/path');              // Create full path
-await client.ensureDir('/path/file.txt', true, true);     // Ensure parent dir for file
+await client.ensureDir('/deep/nested/path');       // Create directory path
+await client.ensureDir('/path/to/file.txt');       // Auto-detects file, creates /path/to/
+await client.ensureDir('/single', false);          // Non-recursive, parent must exist
 ```
 
 ### Utility Methods
@@ -245,9 +268,14 @@ TCP optimizations are automatically applied:
 
 **Typical transfer speeds:** ~2.5 MB/s for 1MB files over standard internet connections.
 
-For large files, use `downloadStream()` to save directly to disk without buffering in memory:
+For large files, use `downloadFile()` or `downloadStream()` to save directly to disk without buffering in memory:
 
 ```javascript
+// Download directly to disk (recommended for large files)
+const bytes = await client.downloadFile('/backup.zip', './local-backup.zip');
+console.log(`Saved ${bytes} bytes`);
+
+// Or use downloadStream for custom processing
 const fs = require('fs');
 const fileStream = fs.createWriteStream('./large-backup.zip');
 const bytes = await client.downloadStream('/backup.zip', fileStream);

@@ -106,11 +106,19 @@ async function runTests() {
     }
 
     // Test 15: Create multiple directories
-    console.log('\n✅ TEST 15: Create nested directories');
+    console.log('\n✅ TEST 15: Create nested directories and test ensureDir');
     await client.mkdir('test-dir-1');
     await client.mkdir('test-dir-2');
     await client.ensureDir('deep/nested/structure');
     console.log('   Created test-dir-1, test-dir-2, and deep/nested/structure');
+    
+    // Test ensureDir with file path (auto-detection)
+    await client.ensureDir('auto/detect/file.txt');
+    console.log('   ensureDir auto-detected file.txt and created parent dirs: auto/detect/');
+    
+    // Verify by uploading to the auto-created directory
+    await client.upload('Auto-created dirs work!', 'auto/detect/file.txt');
+    console.log('   Uploaded file to auto-created directory structure');
 
     // Test 16: Upload file with Buffer
     console.log('\n✅ TEST 16: Upload file using Buffer');
@@ -127,8 +135,30 @@ async function runTests() {
     const bytes = await client.downloadStream('renamed-file.txt', stream);
     console.log(`   Downloaded ${bytes} bytes via stream`);
 
-    // Test 17b: Large file upload/download performance test
-    console.log('\n✅ TEST 17b: Large file performance test');
+    // Test 17a: Upload local file
+    console.log('\n✅ TEST 17a: Upload local file from disk');
+    const fs = require('fs');
+    const localTestFile = './test-local-upload.txt';
+    fs.writeFileSync(localTestFile, 'Local file content test\nTimestamp: ' + new Date().toISOString());
+    await client.uploadFile(localTestFile, 'uploaded-from-disk.txt');
+    console.log(`   Uploaded ${localTestFile} → uploaded-from-disk.txt`);
+    fs.unlinkSync(localTestFile);
+    console.log(`   Cleaned up local file`);
+
+    // Test 17b: Download to local file
+    console.log('\n✅ TEST 17b: Download to local file on disk');
+    const localDownloadFile = './test-local-download.txt';
+    const downloadBytes = await client.downloadFile('uploaded-from-disk.txt', localDownloadFile);
+    const downloadedContent = fs.readFileSync(localDownloadFile, 'utf8');
+    console.log(`   Downloaded ${downloadBytes} bytes to ${localDownloadFile}`);
+    console.log(`   Content preview: ${downloadedContent.substring(0, 50)}...`);
+    fs.unlinkSync(localDownloadFile);
+    console.log(`   Cleaned up local file`);
+    await client.delete('uploaded-from-disk.txt');
+    console.log(`   Cleaned up remote file`);
+
+    // Test 17c: Large file upload/download performance test
+    console.log('\n✅ TEST 17c: Large file performance test');
     const largeData = Buffer.alloc(1024 * 1024, 'x'); // 1MB file
     console.log(`   Uploading 1MB file...`);
     const uploadStart = Date.now();
@@ -145,7 +175,7 @@ async function runTests() {
     await client.delete('large-test.bin');
     console.log(`   Cleaned up large-test.bin`);
 
-    // Test 18: Try chmod (may not work on all servers)
+    // Test 18: Try chmod
     console.log('\n✅ TEST 18: Change file permissions (chmod)');
     try {
       await client.chmod('renamed-file.txt', '644');
