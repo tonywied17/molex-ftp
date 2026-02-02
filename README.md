@@ -83,11 +83,13 @@ await client.upload('content', '/deep/path/file.txt', true); // Auto-create dirs
 const data = await client.download('/path/file.txt');
 ```
 
-#### `downloadStream(remotePath, writeStream)` → `number` (bytes)
+#### `downloadStream(remotePath, writeStream)` → `number`
+Stream download directly to a writable stream (for saving to disk or processing chunks).
 ```javascript
 const fs = require('fs');
-const stream = fs.createWriteStream('./local.bin');
-const bytes = await client.downloadStream('/remote.bin', stream);
+const fileStream = fs.createWriteStream('./local-file.bin');
+const bytes = await client.downloadStream('/remote.bin', fileStream);
+console.log(`Saved ${bytes} bytes to disk`);
 ```
 
 #### `delete(path)`
@@ -198,13 +200,13 @@ TCP optimizations are automatically applied:
 - **TCP_NODELAY** - Disables Nagle's algorithm for lower latency
 - **Keep-alive** - Detects dead connections (10s interval)
 
-For large files, use `downloadStream()` for memory-efficient transfers:
+For large files, use `downloadStream()` to save directly to disk without buffering in memory:
 
 ```javascript
 const fs = require('fs');
-const stream = fs.createWriteStream('./large.zip');
-const bytes = await client.downloadStream('/backup.zip', stream);
-console.log(`Downloaded ${bytes} bytes`);
+const fileStream = fs.createWriteStream('./large-backup.zip');
+const bytes = await client.downloadStream('/backup.zip', fileStream);
+console.log(`Saved ${bytes} bytes to disk`);
 ```
 
 ## Error Handling
