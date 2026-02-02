@@ -119,11 +119,35 @@ const info = await client.stat('/path/file.txt');
 const bytes = await client.size('/path/file.txt');
 ```
 
+#### `modifiedTime(path)` → `Date`
+```javascript
+const date = await client.modifiedTime('/path/file.txt');
+```
+
+#### `chmod(path, mode)`
+Change file permissions (Unix/Linux servers only).
+```javascript
+await client.chmod('/path/file.txt', '755');    // String format
+await client.chmod('/path/script.sh', 0755);    // Octal format
+```
+
 ### Directory Methods
 
 #### `list(path)` → `string`
+Raw directory listing.
 ```javascript
 const listing = await client.list('/path');
+```
+
+#### `listDetailed(path)` → `Array`
+Parsed directory listing with permissions, owner, size, etc.
+```javascript
+const files = await client.listDetailed('/path');
+// [
+//   { name: 'file.txt', type: 'file', permissions: '-rw-r--r--', 
+//     owner: 'user', group: 'group', size: 1024, date: 'Jan 15 10:30' },
+//   { name: 'subdir', type: 'directory', permissions: 'drwxr-xr-x', ... }
+// ]
 ```
 
 #### `mkdir(path)`
@@ -166,6 +190,13 @@ const state = client.getState();
 Toggle debug mode at runtime.
 ```javascript
 client.setDebug(true);
+```
+
+#### `site(command)` → `Object`
+Execute server-specific SITE commands.
+```javascript
+await client.site('CHMOD 755 /path/file.txt');  // Alternative chmod
+const response = await client.site('HELP');      // Get server help
 ```
 
 ## Events
