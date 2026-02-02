@@ -1,20 +1,15 @@
 # molex-ftp-client
 
-Lightweight FTP client built with native Node.js TCP sockets (net module).
+Lightweight FTP client built with native Node.js TCP sockets. Zero dependencies, optimized for performance.
 
 ## Features
 
-- ✅ **Zero dependencies** - Uses only native Node.js modules
-- ✅ **Promise-based API** - Modern async/await support
-- ✅ **Passive mode** (PASV) for data transfers
-- ✅ **Debug logging** - Optional verbose logging for troubleshooting
-- ✅ **Connection keep-alive** - Automatic TCP keep-alive
-- ✅ **Configurable timeouts** - Prevent hanging connections
-- ✅ **Event-based** - Listen to FTP responses and events
-- ✅ **Upload/download** files with Buffer support
-- ✅ **Directory operations** (list, cd, mkdir, pwd)
-- ✅ **File operations** (delete, rename, size, exists, modifiedTime)
-- ✅ **Connection statistics** - Track command count and status
+- **Zero dependencies** - Uses only native Node.js modules
+- **Promise-based API** - Modern async/await support
+- **TCP optimizations** - TCP_NODELAY and keep-alive applied by default
+- **Auto-create directories** - Upload files to nested paths automatically
+- **Streaming support** - Memory-efficient downloads for large files
+- **Full FTP support** - Upload, download, list, delete, rename, stat, and more
 
 ## Installation
 
@@ -27,329 +22,165 @@ npm install molex-ftp-client
 ```javascript
 const FTPClient = require('molex-ftp-client');
 
-const client = new FTPClient({
-  debug: true,           // Enable debug logging (default: false)
-  timeout: 30000,        // Command timeout in ms (default: 30000)
-  keepAlive: true        // Enable TCP keep-alive (default: true)
+const client = new FTPClient();
+
+await client.connect({
+  host: 'ftp.example.com',
+  user: 'username',
+  password: 'password'
 });
 
-try {
-  // Connect to FTP server
-  await client.connect({
-    host: 'ftp.example.com',
-    port: 21,
-    user: 'username',
-    password: 'password'
-  });
+// Upload with auto-directory creation
+await client.upload('Hello World!', '/path/to/file.txt', true);
 
-  // Upload file
-  await client.upload('Hello World!', '/remote/path/file.txt');
+// Download
+const data = await client.download('/path/to/file.txt');
+console.log(data.toString());
 
-  // Download file
-  const data = await client.download('/remote/path/file.txt');
-  console.log(data.toString());
-
-  // Close connection
-  await client.close();
-} catch (err) {
-  console.error('FTP Error:', err);
-}
+await client.close();
 ```
 
 ## Constructor Options
 
 ```javascript
 const client = new FTPClient({
-  debug: false,          // Enable debug logging
-  timeout: 30000,        // Command timeout in milliseconds
-  keepAlive: true,       // Enable TCP keep-alive
-  logger: console.log    // Custom logger function
+  debug: false,       // Enable debug logging
+  timeout: 30000,     // Command timeout in milliseconds (default: 30000)
+  logger: console.log // Custom logger function
 });
 ```
 
-## API
+## API Reference
 
-### Connection
+### Connection Methods
 
 #### `connect(options)`
-
-Connect to FTP server.
-
 ```javascript
 await client.connect({
-  host: 'ftp.example.com',  // Required
-  port: 21,                  // Default: 21
-  user: 'username',          // Default: 'anonymous'
-  password: 'password'       // Default: 'anonymous@'
+  host: 'ftp.example.com',    // Required
+  port: 21,                    // Default: 21
+  user: 'username',            // Default: 'anonymous'
+  password: 'password'         // Default: 'anonymous@'
 });
 ```
 
-Returns: `Promise<void>`
-
-#### `close()` / `disconnect()`
-
-Close connection to FTP server.
-
+#### `close()`
 ```javascript
 await client.close();
 ```
 
-Returns: `Promise<void>`
+### File Methods
 
-### File Operations
-
-#### `upload(data, remotePath)`
-
-Upload file to server.
-
+#### `upload(data, remotePath, ensureDir)`
 ```javascript
-// Upload string
-await client.upload('Hello World!', '/path/file.txt');
-
-// Upload Buffer
-const buffer = Buffer.from('data');
-await client.upload(buffer, '/path/file.bin');
+await client.upload('content', '/path/file.txt');           // Basic upload
+await client.upload(buffer, '/path/file.bin');              // Upload Buffer
+await client.upload('content', '/deep/path/file.txt', true); // Auto-create dirs
 ```
 
-Returns: `Promise<void>`
-
-#### `download(remotePath)`
-
-Download file from server.
-
+#### `download(remotePath)` → `Buffer`
 ```javascript
 const data = await client.download('/path/file.txt');
-console.log(data.toString()); // Convert Buffer to string
 ```
 
-Returns: `Promise<Buffer>`
+#### `downloadStream(remotePath, writeStream)` → `number` (bytes)
+```javascript
+const fs = require('fs');
+const stream = fs.createWriteStream('./local.bin');
+const bytes = await client.downloadStream('/remote.bin', stream);
+```
 
 #### `delete(path)`
-
-Delete file.
-
 ```javascript
 await client.delete('/path/file.txt');
 ```
 
-Returns: `Promise<void>`
-
 #### `rename(from, to)`
-
-Rename or move file.
-
 ```javascript
-await client.rename('/old/path.txt', '/new/path.txt');
+await client.rename('/old.txt', '/new.txt');
 ```
 
-Returns: `Promise<void>`
-
-#### `size(path)`
-
-Get file size in bytes.
-
-```javascript
-const bytes = await client.size('/path/file.txt');
-console.log(`File size: ${bytes} bytes`);
-```
-
-Returns: `Promise<number>`
-
-#### `exists(path)`
-
-Check if file exists.
-
+#### `exists(path)` → `boolean`
 ```javascript
 const exists = await client.exists('/path/file.txt');
-console.log(exists ? 'File exists' : 'File not found');
 ```
 
-Returns: `Promise<boolean>`
-
-#### `modifiedTime(path)`
-
-Get file modification time.
-
+#### `stat(path)` → `Object`
+Get detailed file/directory information.
 ```javascript
-const date = await client.modifiedTime('/path/file.txt');
-console.log(`Last modified: ${date.toISOString()}`);
+const info = await client.stat('/path/file.txt');
+// { exists: true, size: 1024, isFile: true, isDirectory: false }
 ```
 
-Returns: `Promise<Date>`
-
-#### `uploadFile(data, remotePath, ensureDir)`
-
-Upload file and optionally ensure parent directory exists.
-
+#### `size(path)` → `number`
 ```javascript
-// Upload with automatic directory creation
-await client.uploadFile('data', '/deep/nested/path/file.txt', true);
-
-// Upload without directory creation (default behavior)
-await client.uploadFile('data', '/file.txt');
+const bytes = await client.size('/path/file.txt');
 ```
 
-- `data` (string|Buffer): File content
-- `remotePath` (string): Remote file path
-- `ensureDir` (boolean): Create parent directories if needed (default: false)
+### Directory Methods
 
-Returns: `Promise<void>`
-
-### Directory Operations
-
-#### `list(path)`
-
-List directory contents.
-
+#### `list(path)` → `string`
 ```javascript
-const listing = await client.list('/remote/path');
-console.log(listing);
+const listing = await client.list('/path');
 ```
-
-Returns: `Promise<string>` - Raw directory listing
-
-#### `cd(path)`
-
-Change working directory.
-
-```javascript
-await client.cd('/remote/path');
-```
-
-Returns: `Promise<void>`
-
-#### `pwd()`
-
-Get current working directory.
-
-```javascript
-const dir = await client.pwd();
-console.log(`Current directory: ${dir}`);
-```
-
-Returns: `Promise<string>`
 
 #### `mkdir(path)`
-
-Create directory.
-
 ```javascript
-await client.mkdir('/remote/newdir');
+await client.mkdir('/path/newdir');
 ```
 
-Returns: `Promise<void>`
-
-#### `ensureDir(dirPath, recursive)`
-
-Ensure directory exists, creating it (and parent directories) if necessary.
-
+#### `cd(path)`
 ```javascript
-// Create nested directories recursively
-await client.ensureDir('/deep/nested/path');
-
-// Create single directory (no parent creation)
-await client.ensureDir('/newdir', false);
+await client.cd('/path/to/directory');
 ```
 
-- `dirPath` (string): Directory path to ensure exists
-- `recursive` (boolean): Create parent directories if needed (default: true)
-
-Returns: `Promise<void>`
-
-#### `ensureParentDir(filePath)`
-
-Ensure the parent directory exists for a given file path.
-
+#### `pwd()` → `string`
 ```javascript
-// Ensures /path/to exists before uploading
-await client.ensureParentDir('/path/to/file.txt');
-await client.upload('data', '/path/to/file.txt');
+const currentDir = await client.pwd();
 ```
 
-Returns: `Promise<void>`
-
-### Utilities
-
-#### `getStats()`
-
-Get connection statistics.
-
+#### `ensureDir(dirPath, recursive, isFilePath)`
+Create directory if it doesn't exist, optionally creating parent directories.
 ```javascript
-const stats = client.getStats();
-console.log(stats);
+await client.ensureDir('/deep/nested/path');              // Create full path
+await client.ensureDir('/path/file.txt', true, true);     // Ensure parent dir for file
+```
+
+### Utility Methods
+
+#### `getState()` → `Object`
+Get current client state for debugging.
+```javascript
+const state = client.getState();
 // {
 //   connected: true,
 //   authenticated: true,
-//   commandCount: 5,
-//   lastCommand: 'LIST .'
+//   host: 'ftp.example.com',
+//   ...
 // }
 ```
 
-Returns: `Object`
-
 #### `setDebug(enabled)`
-
-Enable or disable debug mode at runtime.
-
+Toggle debug mode at runtime.
 ```javascript
-client.setDebug(true);  // Enable debug logging
-client.setDebug(false); // Disable debug logging
+client.setDebug(true);
 ```
 
 ## Events
 
-The client extends EventEmitter and emits the following events:
-
-### `connected`
-
-Fired when TCP connection is established.
-
 ```javascript
-client.on('connected', () => {
-  console.log('Connected to FTP server');
-});
+client.on('connected', () => console.log('TCP connection established'));
+client.on('response', (line) => console.log('FTP:', line));
+client.on('error', (err) => console.error('Error:', err));
+client.on('close', () => console.log('Connection closed'));
 ```
 
-### `response`
+## Debugging
 
-Fired for each FTP response (useful for debugging).
-
-```javascript
-client.on('response', (line) => {
-  console.log('FTP:', line);
-});
-```
-
-### `error`
-
-Fired on connection errors.
-
-```javascript
-client.on('error', (err) => {
-  console.error('FTP Error:', err);
-});
-```
-
-### `close`
-
-Fired when connection is closed.
-
-```javascript
-client.on('close', () => {
-  console.log('Connection closed');
-});
-```
-
-## Debug Mode
-
-Enable debug logging to troubleshoot FTP issues:
+Enable debug mode to see all FTP commands and responses:
 
 ```javascript
 const client = new FTPClient({ debug: true });
-
-client.on('response', (line) => {
-  console.log('FTP Response:', line);
-});
 
 await client.connect({ host: 'ftp.example.com', user: 'user', password: 'pass' });
 // [FTP Debug] Connecting to ftp.example.com:21 as user
@@ -359,12 +190,24 @@ await client.connect({ host: 'ftp.example.com', user: 'user', password: 'pass' }
 // [FTP Debug] <<< 331 Password required
 // [FTP Debug] >>> PASS ********
 // [FTP Debug] <<< 230 Login successful
-// [FTP Debug] Authentication successful
+```
+
+## Performance
+
+TCP optimizations are automatically applied:
+- **TCP_NODELAY** - Disables Nagle's algorithm for lower latency
+- **Keep-alive** - Detects dead connections (10s interval)
+
+For large files, use `downloadStream()` for memory-efficient transfers:
+
+```javascript
+const fs = require('fs');
+const stream = fs.createWriteStream('./large.zip');
+const bytes = await client.downloadStream('/backup.zip', stream);
+console.log(`Downloaded ${bytes} bytes`);
 ```
 
 ## Error Handling
-
-All methods return promises and will reject on errors:
 
 ```javascript
 try {
@@ -372,74 +215,45 @@ try {
 } catch (err) {
   if (err.message.includes('FTP Error 550')) {
     console.error('Permission denied');
-  } else {
-    console.error('Upload failed:', err.message);
   }
 }
 ```
 
-## Complete Example
+## Example
 
 ```javascript
 const FTPClient = require('molex-ftp-client');
 
-async function backupFile() {
-  const client = new FTPClient({ 
-    debug: true,
-    timeout: 60000 
-  });
+async function main() {
+  const client = new FTPClient({ debug: true });
 
   try {
-    // Connect
     await client.connect({
-      host: 'ftp.myserver.com',
-      port: 21,
+      host: 'ftp.example.com',
       user: 'admin',
-      password: 'secret123'
+      password: 'secret'
     });
 
-    console.log('Current directory:', await client.pwd());
-
-    // Check if file exists
-    const exists = await client.exists('/backup/data.json');
-    if (exists) {
-      // Download existing file
-      const oldData = await client.download('/backup/data.json');
-      console.log('Old backup size:', oldData.length, 'bytes');
-      
-      // Get modification time
-      const modTime = await client.modifiedTime('/backup/data.json');
-      console.log('Last modified:', modTime.toISOString());
-      
-      // Rename old backup
-      await client.rename('/backup/data.json', '/backup/data.old.json');
+    // Check file info
+    const info = await client.stat('/backup/data.json');
+    if (info.exists) {
+      console.log(`File size: ${info.size} bytes`);
+      const data = await client.download('/backup/data.json');
+      console.log('Downloaded:', data.toString());
     }
 
-    // Upload new backup
-    const newData = JSON.stringify({ timestamp: Date.now(), data: [1, 2, 3] });
-    await client.upload(newData, '/backup/data.json');
-    console.log('Backup uploaded successfully');
-
-    // Verify
-    const size = await client.size('/backup/data.json');
-    console.log('New backup size:', size, 'bytes');
-
-    // Get stats
-    const stats = client.getStats();
-    console.log('Commands executed:', stats.commandCount);
-
-    // Close connection
+    // Upload new file
+    await client.upload('new data', '/backup/updated.json', true);
+    
     await client.close();
   } catch (err) {
-    console.error('Backup failed:', err.message);
-    await client.close();
+    console.error('FTP Error:', err.message);
   }
 }
 
-backupFile();
+main();
 ```
 
 ## License
 
-ISC © Tony Wiedman / MolexWorks
-
+ISC License

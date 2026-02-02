@@ -1,11 +1,8 @@
 {
-  "name": "@tonywied17/molex-ftp-client",
-  "version": "1.2.0",
+  "name": "molex-ftp-client",
+  "version": "2.1.0",
   "description": "Lightweight FTP client using native Node.js TCP sockets (net module) with zero dependencies",
   "main": "index.js",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "scripts": {
     "test": "node test.js"
   },

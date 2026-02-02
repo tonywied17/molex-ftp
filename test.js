@@ -44,24 +44,28 @@ async function test() {
     const exists = await client.exists('/test.txt');
     console.log('✓ File exists:', exists);
 
-    // Test upload
-    await client.upload('Hello from FTP client!\nTimestamp: ' + new Date().toISOString(), '/test.txt');
-    console.log('✓ File uploaded!');
+    // Test exists for directory
+    const dirExists = await client.exists('/');
+    console.log('✓ Root directory exists:', dirExists);
+
+    // Test upload with ensureDir
+    await client.upload('Hello from FTP client!\nTimestamp: ' + new Date().toISOString(), '/testdir/test.txt', true);
+    console.log('✓ File uploaded with directory creation!');
 
     // Test size
-    const size = await client.size('/test.txt');
+    const size = await client.size('/testdir/test.txt');
     console.log('✓ File size:', size, 'bytes');
 
     // Test modified time
     try {
-      const modTime = await client.modifiedTime('/test.txt');
+      const modTime = await client.modifiedTime('/testdir/test.txt');
       console.log('✓ Last modified:', modTime.toISOString());
     } catch (err) {
       console.log('⚠ MDTM not supported by server');
     }
 
     // Test download
-    const data = await client.download('/test.txt');
+    const data = await client.download('/testdir/test.txt');
     console.log('✓ Downloaded:', data.toString());
 
     // Test list
